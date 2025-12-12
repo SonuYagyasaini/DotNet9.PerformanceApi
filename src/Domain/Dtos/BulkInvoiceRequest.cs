@@ -1,0 +1,1 @@
+namespace Domain.Dtos; public record BulkInvoiceRequest(List<InvoiceDto> Data);

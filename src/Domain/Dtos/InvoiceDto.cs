@@ -1,0 +1,1 @@
+namespace Domain.Dtos; public record InvoiceDto(string Customer, decimal Amount);

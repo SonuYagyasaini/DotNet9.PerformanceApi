@@ -1,0 +1,8 @@
+# Run these commands in the project root (D:\DotNet9.PerformanceApi)
+git init
+git add .
+git commit -m "Initial project commit - DotNet9 Performance API"
+# create repo on GitHub and replace <YOUR_REMOTE_URL>
+git remote add origin <YOUR_REMOTE_URL>
+git branch -M main
+git push -u origin main
