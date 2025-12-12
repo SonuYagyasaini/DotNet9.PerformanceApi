@@ -8,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using Azure.Identity;
+using Api.Middleware;
+using Microsoft.OpenApi.Models;
 
 namespace Api.Extensions;
 
@@ -22,6 +24,7 @@ public static class ServiceExtensions
 
         var sbConn = config.GetValue<string>("ServiceBus:Conn");
         var sbNamespace = config["ServiceBus:Namespace"]; // e.g. "mynamespace.servicebus.windows.net"
+        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
         if (!string.IsNullOrWhiteSpace(sbConn))
         {
@@ -32,13 +35,22 @@ public static class ServiceExtensions
             services.AddSingleton(sp =>
                 new ServiceBusClient(sbNamespace, new DefaultAzureCredential()));
         }
-        else
+        else if (!isDevelopment)
         {
             throw new InvalidOperationException(
-                "ServiceBus is not configured. Set ServiceBus:Conn or ServiceBus:Namespace for Managed Identity.");
+                "ServiceBus is not configured. Set ServiceBus:Conn or ServiceBus:Namespace.");
+        }
+        else
+        {
+            // no Service Bus for local env
+            services.AddSingleton<ServiceBusClient?>(_ => null);
         }
 
+        // Register application services
         services.AddScoped<IInvoiceService, InvoiceService>();
+
+        // Register middleware implemented as IMiddleware so it can be resolved by UseMiddleware<T>()
+        services.AddScoped<GlobalExceptionMiddleware>();
 
         var key = config["Jwt:Key"];
         if (!string.IsNullOrEmpty(key))
@@ -57,8 +69,15 @@ public static class ServiceExtensions
                 });
         }
 
+        // Ensure authorization services are registered so app.UseAuthorization() succeeds
+        services.AddAuthorization();
+
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        // Configure Swagger generation with a v1 document so /swagger/v1/swagger.json is available
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Api", Version = "v1" });
+        });
 
         services.AddRateLimiter(options =>
         {
