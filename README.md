@@ -1,4 +1,4 @@
-# DotNet9 Performance API - Final Combined
+# DotNet9 Performance API
 
 This bundle contains the full production-ready solution:
 - Api (Minimal API) using .NET 9 with Swagger and optional JWT
